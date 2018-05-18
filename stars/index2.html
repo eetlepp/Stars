@@ -1,0 +1,204 @@
+<html>
+	<head>
+		<title>Stars</title>
+	</head>
+	<body>
+		<h1>Stars</h1>
+		<canvas id="mycanvas" width="512" height="512" style="background:rgba(0,0,0,0.5)"></canvas>
+		<script>
+			var canvas = document.getElementById('mycanvas');
+			var c = canvas.getContext('2d');
+			
+			var stararray = [];
+			var starcount = 0;
+			var starid = 0;
+			var starimage = document.getElementById("star");
+			
+			class rstar
+			{
+				constructor(id, ax, ay, vx, vy)
+				{
+					this.x = ax;
+					this.y = ay;
+					this.rx = this.getrandom(-1, 1) - vx; // x nopeus
+					this.ry = this.getrandom(-1, 1) - vy; // y nopeus
+					
+					// rajoita nopeutta
+					if(this.rx>10)
+						this.rx = 10;
+					else if(this.rx<-10)
+						this.rx = -10;
+
+					if(this.ry>10)
+						this.ry = 10;
+					else if(this.ry<-10)
+						this.ry = -10;
+	
+					this.lifespan = 2; // tähti häviää 2s kuluttua.
+					this.size = 0.2;
+					
+					this.centerx = 256;
+					this.centery = 256;
+					
+					this.movestocenter = false;
+					this.depth = 0.006;
+					this.friction = 0.02;
+				}
+				
+				getrandom(min, max)
+				{
+					var rand = (Math.random() * (max - min + 1) ) + min;
+					return rand;
+				}
+				
+				deleteme()
+				{
+					deletestar(this.id);
+				}
+				
+				drawstar()
+				{
+					c.beginPath();
+					c.moveTo(this.x + (65*this.size), this.y + (25*this.size));
+					c.lineTo(this.x + (95*this.size), this.y + (55*this.size));
+					c.lineTo(this.x + (35*this.size), this.y + (55*this.size));
+					c.fill();
+					
+					c.beginPath();
+					c.moveTo(this.x + (65*this.size), this.y + (85*this.size));
+					c.lineTo(this.x + (95*this.size), this.y + (55*this.size));
+					c.lineTo(this.x + (35*this.size), this.y + (55*this.size));
+					c.fill();
+				}
+				
+				render(delta)
+				{
+					var cx = 0;
+					var cy = 0;
+					if(this.x<this.centerx+256 && this.x>this.centerx-256 && this.y<this.centery+256 && this.y>this.centery-256)
+					{
+						var absx = Math.abs(this.x-this.centerx);
+						var cx = Math.sqrt(absx);
+						if(this.x>this.centerx)
+							cx = -cx;
+						var absy = Math.abs(this.y-this.centery);
+						var cy = Math.sqrt(absy);
+						if(this.y>this.centery)
+							cy = -cy;
+						//this.slowtime-=delta/this.slow;
+						//if(this.slowtime<0)
+						//	this.slowtime = 0;
+						//this.rx=((this.rx*(1-this.friction))+(cx*this.depth));
+						//this.ry=((this.ry*(1-this.friction))+(cy*this.depth));
+					}
+					this.rx=(this.rx+(cx*this.depth))*(1-this.friction);
+					this.ry=(this.ry+(cy*this.depth))*(1-this.friction);
+					
+					this.x+=this.rx;
+					this.y+=this.ry;
+					
+					// ponnahda seinästä.
+					if(this.x>canvas.width)
+					{
+						this.x = canvas.width-1;
+						this.rx = -Math.abs(this.rx);
+					}
+					else if(this.x<0)
+					{
+						this.x = 1;
+						this.rx = Math.abs(this.rx);
+					}
+					
+					if(this.y>canvas.height)
+					{
+						this.y = canvas.height-1;
+						this.ry = -Math.abs(this.ry);
+					}
+					else if(this.y<0)
+					{
+						this.y = 1;
+						this.ry = Math.abs(this.ry);
+					}
+										
+					this.lifespan-=delta;
+
+					if(this.lifespan<=0)
+					{
+						this.lifespan = 0.0;
+						this.deleteme();
+					}
+					c.fillStyle = "rgb(255,255,0,"+this.lifespan+")";
+					this.drawstar();
+				}
+			}
+			
+			function addstar(x, y, vx, vy)
+			{
+				stararray[starcount] = new rstar(starid, x, y, vx, vy);
+				starcount++;
+				starid++;
+			}
+			
+			function deletestar(id)
+			{
+				for(var i=0;i<starcount;i++)
+				{
+					if(stararray[i].id == id)
+					{
+						stararray.splice(i, 1);
+						break;
+					}
+				}
+				starcount--;
+				if(starcount<=0)
+					startid = 0;
+			}
+						
+			var oldvisiblemousex = 0;
+			var oldvisiblemousey = 0;
+			var visiblemousex = 0;
+			var visiblemousey = 0;
+			
+			canvas.addEventListener('mousemove', function(event)
+			{
+				var mousex = event.clientX;
+				var mousey = event.clientY;
+				var rect = canvas.getBoundingClientRect();
+				
+				oldvisiblemousex = visiblemousex;
+				oldvisiblemousey = visiblemousey;
+				visiblemousex = mousex-rect.left;
+				visiblemousey = mousey-rect.top;
+				
+				// tähdet liikkuvat hiiren suuntaan.
+				// laske hiiren nopeus.
+				var mousevelx = oldvisiblemousex - visiblemousex;
+				var mousevely = oldvisiblemousey - visiblemousey;
+				
+				addstar(visiblemousex - 12, visiblemousey - 12, mousevelx, mousevely);
+				addstar(visiblemousex - 12, visiblemousey - 12, mousevelx, mousevely);
+				addstar(visiblemousex - 12, visiblemousey - 12, mousevelx, mousevely);
+				addstar(visiblemousex - 12, visiblemousey - 12, mousevelx, mousevely);
+			}, false);
+			
+			var t = 0;
+			function render(n) 
+			{
+				n *= 0.001;
+				const delta = n - t;
+				t = n;
+				
+				var i = 0;
+				c.clearRect(0,0,canvas.width,canvas.height); // tyhjennä tausta.
+				while(i<starcount)
+				{
+					stararray[i].render(delta);
+					i++;
+				}
+				requestAnimationFrame(render);
+			}
+			requestAnimationFrame(render);
+			
+		</script>
+	</body>
+</html>
